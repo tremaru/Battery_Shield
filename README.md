@@ -13,7 +13,7 @@
 
 | Модель | Ссылка на магазин |
 |---|---|
-| Модуль Batttery Shield <img src="https://wiki.iarduino.ru/img/resources/953/953.svg" width="150px"></img>| https://iarduino.ru/shop/Expansion-payments/battery-shield.html |
+| <p>Модуль Batttery Shield</p> <img src="https://wiki.iarduino.ru/img/resources/953/953.svg" width="150px"></img>| https://iarduino.ru/shop/Expansion-payments/battery-shield.html |
 
 
 ## Назначение функций:
