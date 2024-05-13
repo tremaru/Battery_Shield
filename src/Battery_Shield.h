@@ -1,5 +1,5 @@
 //	Библиотека для работы с источником автономного питания «battery shield»: http://iarduino.ru/shop/Expansion-payments/battery-shield.html
-//  Версия: 1.0.4
+//  Версия: 1.0.5
 //  Последнюю версию библиотеки Вы можете скачать по ссылке: http://iarduino.ru/file/344.html
 //  Подробное описание функции бибилиотеки доступно по ссылке: http://wiki.iarduino.ru/page/Battery_Shield/
 //  Библиотека является собственностью интернет магазина iarduino.ru и может свободно использоваться и распространяться!
@@ -17,7 +17,14 @@
 #include	<WProgram.h>															//
 #endif																				//
 																					//
-#include <Battery_Shield_I2C.h>														//	Подключаем файл Battery_Shield_I2C.h - для работы с шиной I2C        (используя функции производного класса iarduino_I2C).
+#include	"Battery_Shield_I2C.h"													//	Подключаем библиотеку выбора реализации шины I2C.
+																					//
+#if defined(TwoWire_h) || defined(__ARDUINO_WIRE_IMPLEMENTATION__) || defined(__AVR_ATmega328__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega2560__) || defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RP2040) || defined(RENESAS_CORTEX_M4) // Если подключена библиотека Wire или платы её поддерживают...
+#include	<Wire.h>																//	Разрешаем использовать библиотеку Wire в данной библиотеке.
+#endif																				//
+#if defined( iarduino_I2C_Software_h )												//	Если библиотека iarduino_I2C_Software подключена в скетче...
+#include	<iarduino_I2C_Software.h>												//	Разрешаем использовать библиотеку iarduino_I2C_Software в данной библиотеке.
+#endif																				//
 																					//
 	//		INPUT							0										//	Параметр для функции voltmeter() аналог константы BATTERY.
 	//		OUTPUT							1										//	Параметр для функции voltmeter() указвающий что требуется получить напряжение на выходе battery shield.
@@ -32,7 +39,6 @@
 																					//
 #define		IP5108_RESISTOR					0.0128f									//	Сопротивление установленное в цепи аккумулятора, используемое для измерения силы тока аккумулятора.
 #define		IP5108_EFFICIENCY				0.94f									//	Коэффициент полезного действия повышающего DC-DC преобразователя в абсолютных значениях (от 0 до 1).
-#define		IP5108_ADDRESS					0x75									//	Адрес чипа IP5108 на шине I2C.
 																					//
 #define		IP5108_SYS_CTL0					0x01									//	Системный регистр управления, хранит флаги разрешающие работу блоков чипа IP5108.
 #define		IP5108_SYS_CTL1					0x02									//	Системный регистр управления, хранит флаги управляющие автоматическим включением/выключением чипа IP5108.
@@ -68,11 +74,18 @@
 class Battery_Shield{																//
 	public:																			//
 	/**	Конструктор класса **/														//
-		Battery_Shield						(uint8_t address=0x3C){					//	Конструктор класса										(Параметр: адрес дисплея на шине I2C)
-							objI2C		=	new iarduino_I2C;						//	Переопределяем указатель objI2C на объект производного класса iarduino_I2C
+		Battery_Shield						(uint8_t address){						//	Конструктор класса										(Параметр: адрес модуля на шине I2C 0x75-старый, 0x35-новый)
+							valAddr		=	address;								//	Сохраняем переданный адрес модуля.
+							selI2C		=	new iarduino_I2C_Select;				//	Переопределяем указатель selI2C на объект производного класса iarduino_I2C_Select.
 		}																			//
 	/**	Пользовательские функции **/												//
-		bool				begin			(float, float=IP5108_EFFICIENCY*100);	//	Объявляем  функцию инициализации battery shield.		(Параметр: значение сопротивления в Ом, [КПД повышающего DC-DC преобразователя в %])
+		#if defined(TwoWire_h) || defined(__ARDUINO_WIRE_IMPLEMENTATION__)			//
+		bool				begin			(                float r, float k=IP5108_EFFICIENCY*100.0f ){ selI2C->begin(&Wire); return _begin(r,k); }	//	Инициализация	(Параметр:  значение сопротивления в Ом, [КПД повышающего DC-DC преобразователя в %]).
+		bool				begin			(TwoWire*     i, float r, float k=IP5108_EFFICIENCY*100.0f ){ selI2C->begin(  i  ); return _begin(r,k); }	//	Инициализация	(Параметр:  объект для работы с аппаратной шиной I2C, значение сопротивления в Ом, [КПД повышающего DC-DC преобразователя в %]).
+		#endif																		//
+		#if defined(iarduino_I2C_Software_h)										//
+		bool				begin			(SoftTwoWire* i, float r, float k=IP5108_EFFICIENCY*100.0f ){ selI2C->begin(  i  ); return _begin(r,k); }	//	Инициализация	(Параметр:  объект для работы с программной шиной I2C, значение сопротивления в Ом, [КПД повышающего DC-DC преобразователя в %]).
+		#endif																		//
 		bool				off				(void);									//	Объявляем  функцию выключения battery shield.			(Параметр: отсутствует)
 		void				charging		(bool);									//	Объявляем  функцию управления зарядным устройством.		(Параметр: флаг разрешения работы - да/нет)
 		uint8_t				getLevel		(void);									//	Объявляем  функцию получения текущего заряда батареи.	(Параметр: отсутствует)
@@ -84,11 +97,13 @@ class Battery_Shield{																//
 																					//
 	private:																		//
 	/**	Внутренние переменные **/													//
+		iarduino_I2C_VirtualSelect* selI2C;											//	Объявляем  указатель  на  объект полиморфного класса iarduino_I2C_VirtualSelect, но в конструкторе текущего класса этому указателю будет присвоена ссылка на производный класс iarduino_I2C_Select.
+		uint8_t				valAddr;												//	Объявляем  переменную для хранения адреса модуля на шине I2C.
 		float				valEfficiency = IP5108_EFFICIENCY;						//	Определяем переменную для хранения КПД повышающего DC-DC преобразователя в абсолютных значениях (от 0 до 1).
 		float				valResistor	  =	IP5108_RESISTOR;						//	Определяем переменную для хранения сопротивления в цепи аккумулятора с которого меряется ток.
 		uint8_t				valRegistor[2]=	{0,0};									//	Объявляем  массив для получения значений из регистров.
-		iarduino_I2C_BASE*	objI2C;													//	Объявляем  указатель на объект полиморфного класса iarduino_I2C_BASE, но в конструкторе данного класса этому указателю будет присвоена ссылка на производный класс iarduino_I2C.
 	/**	Внутренние функции **/														//
+		bool				_begin			(float, float);							//	Объявляем  функцию инициализации battery shield.		(Параметр: значение сопротивления в Ом, КПД повышающего DC-DC преобразователя в %)
 		float				_ADC			(uint8_t);								//	Объявляем  функцию получения значенией АЦП.				(Параметр: номер первого регистра)
 		bool				_noSleep		(void);									//	Объявляем  функцию запрещающую автосон без нагрузки.	(Параметр: отсутствует)
 };																					//
