@@ -1,5 +1,5 @@
 //	Библиотека для работы с источником автономного питания «battery shield»: http://iarduino.ru/shop/Expansion-payments/battery-shield.html
-//  Версия: 1.0.5
+//  Версия: 1.0.6
 //  Последнюю версию библиотеки Вы можете скачать по ссылке: http://iarduino.ru/file/344.html
 //  Подробное описание функции бибилиотеки доступно по ссылке: http://wiki.iarduino.ru/page/Battery_Shield/
 //  Библиотека является собственностью интернет магазина iarduino.ru и может свободно использоваться и распространяться!
@@ -80,11 +80,11 @@ class Battery_Shield{																//
 		}																			//
 	/**	Пользовательские функции **/												//
 		#if defined(TwoWire_h) || defined(__ARDUINO_WIRE_IMPLEMENTATION__)			//
-		bool				begin			(                float r, float k=IP5108_EFFICIENCY*100.0f ){ selI2C->begin(&Wire); return _begin(r,k); }	//	Инициализация	(Параметр:  значение сопротивления в Ом, [КПД повышающего DC-DC преобразователя в %]).
-		bool				begin			(TwoWire*     i, float r, float k=IP5108_EFFICIENCY*100.0f ){ selI2C->begin(  i  ); return _begin(r,k); }	//	Инициализация	(Параметр:  объект для работы с аппаратной шиной I2C, значение сопротивления в Ом, [КПД повышающего DC-DC преобразователя в %]).
+		bool				begin			(                float r, float k=IP5108_EFFICIENCY*100.0f ){ selI2C->init(&Wire); return _begin(r,k); }	//	Инициализация	(Параметр:  значение сопротивления в Ом, [КПД повышающего DC-DC преобразователя в %]).
+		bool				begin			(TwoWire*     i, float r, float k=IP5108_EFFICIENCY*100.0f ){ selI2C->init(  i  ); return _begin(r,k); }	//	Инициализация	(Параметр:  объект для работы с аппаратной шиной I2C, значение сопротивления в Ом, [КПД повышающего DC-DC преобразователя в %]).
 		#endif																		//
 		#if defined(iarduino_I2C_Software_h)										//
-		bool				begin			(SoftTwoWire* i, float r, float k=IP5108_EFFICIENCY*100.0f ){ selI2C->begin(  i  ); return _begin(r,k); }	//	Инициализация	(Параметр:  объект для работы с программной шиной I2C, значение сопротивления в Ом, [КПД повышающего DC-DC преобразователя в %]).
+		bool				begin			(SoftTwoWire* i, float r, float k=IP5108_EFFICIENCY*100.0f ){ selI2C->init(  i  ); return _begin(r,k); }	//	Инициализация	(Параметр:  объект для работы с программной шиной I2C, значение сопротивления в Ом, [КПД повышающего DC-DC преобразователя в %]).
 		#endif																		//
 		bool				off				(void);									//	Объявляем  функцию выключения battery shield.			(Параметр: отсутствует)
 		void				charging		(bool);									//	Объявляем  функцию управления зарядным устройством.		(Параметр: флаг разрешения работы - да/нет)
