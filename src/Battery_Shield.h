@@ -1,5 +1,5 @@
 //	Библиотека для работы с источником автономного питания «battery shield»: http://iarduino.ru/shop/Expansion-payments/battery-shield.html
-//  Версия: 1.0.6
+//  Версия: 1.0.7
 //  Последнюю версию библиотеки Вы можете скачать по ссылке: http://iarduino.ru/file/344.html
 //  Подробное описание функции бибилиотеки доступно по ссылке: http://wiki.iarduino.ru/page/Battery_Shield/
 //  Библиотека является собственностью интернет магазина iarduino.ru и может свободно использоваться и распространяться!
@@ -79,7 +79,7 @@ class Battery_Shield{																//
 							selI2C		=	new iarduino_I2C_Select;				//	Переопределяем указатель selI2C на объект производного класса iarduino_I2C_Select.
 		}																			//
 	/**	Пользовательские функции **/												//
-		#if defined(TwoWire_h) || defined(__ARDUINO_WIRE_IMPLEMENTATION__)			//
+		#if defined(TwoWire_h) || defined(__ARDUINO_WIRE_IMPLEMENTATION__) || defined(__AVR_ATmega328__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega2560__) || defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RP2040) || defined(RENESAS_CORTEX_M4) // Если подключена библиотека Wire или платы её поддерживают...
 		bool				begin			(                float r, float k=IP5108_EFFICIENCY*100.0f ){ selI2C->init(&Wire); return _begin(r,k); }	//	Инициализация	(Параметр:  значение сопротивления в Ом, [КПД повышающего DC-DC преобразователя в %]).
 		bool				begin			(TwoWire*     i, float r, float k=IP5108_EFFICIENCY*100.0f ){ selI2C->init(  i  ); return _begin(r,k); }	//	Инициализация	(Параметр:  объект для работы с аппаратной шиной I2C, значение сопротивления в Ом, [КПД повышающего DC-DC преобразователя в %]).
 		#endif																		//
